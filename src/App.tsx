@@ -8,6 +8,7 @@ import './App.css';
  */
 interface IState {
   data: ServerRespond[],
+  displayGraph: boolean
 }
 
 /**
@@ -22,6 +23,7 @@ class App extends Component<{}, IState> {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      displayGraph: false
     };
   }
 
@@ -29,20 +31,24 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    if (this.state.displayGraph){ // we don't want to display the graph before the user clicks on "Start Streaming Data"
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    setInterval(() => {
+    let numRequests = 0;
+    const interval = setInterval(() => {
       DataStreamer.getData((serverResponds: ServerRespond[]) => {
-        // Update the state by creating a new array of data that consists of
-        // Previous data in the state and the new data from server
-        if (serverResponds.length !== 0){
-          this.setState({ data: [...this.state.data, ...serverResponds] });
-        }});
+        this.setState({ data: [...this.state.data, ...serverResponds], displayGraph: true });
+      });
+      numRequests += 1;
+      if (numRequests > 2500){ // stop making requests to the server after 5000 have been made
+        clearInterval(interval);
+      }
     }, 100)
   }
 
